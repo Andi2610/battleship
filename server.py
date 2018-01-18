@@ -17,13 +17,14 @@ class Server:
 	def waitingConnect(self,serversocket):
 		n=0
 		while True:
-		conn,addr=serversocket.accept()
+			conn,addr=serversocket.accept()
+			n+=1
 			if n==1:
 				self.player1,addr1=conn,addr
 				thread1=threading.Thread(target=self.startGame(self.player1))
 				thread1.start()
-				self.player1.send("Welcome in Battleship game...Wait for player2...")
-			n+=1
+				#self.player1.send("Welcome in Battleship game...Wait for player2...")
+			
 			if (n==2):
 				self.player2,addr2=conn,addr
 				thread2=threading.Thread(target=self.startGame(self.player2))
