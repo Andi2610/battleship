@@ -29,10 +29,10 @@ class Client:
             status_label.configure(text='Waiting for other player')
             player_status=clientsocket.recv(BUFFER)
             print (player_status)
-            enable_player_grid()
-            enable_ready()
-            enable_horizontal()
-            enable_vertical()
+            self.enable_player_grid()
+            self.enable_ready()
+            self.enable_horizontal()
+            self.enable_vertical()
             status_label.configure(text='Enter your ship position of ship size 5')
 
         except:
@@ -91,56 +91,78 @@ class Client:
         vertical['state']='normal'
 
     def set_horizontal(self):
+        global horizontal_flag
+        global vertical_flag
         horizontal_flag=True
+        #print("in horizontal")
         vertical_flag=False
 
     def set_vertical(self):
+        global horizontal_flag
+        global vertical_flag
         vertical_flag =True
         horizontal_flag=False
 
-    def send_ship_positions(ship_positions):
+    def send_ship_positions(self,ship_positions):
         global clientsocket
-        clientsocket.sendall(ship_positions)
-        msg = clientsocket.recv(BUFFER)
-        do_operation(msg)
+        print(ship_positions)
+        clientsocket.sendall(str(ship_positions))
+        print("After sending")
+        #msg = clientsocket.recv(BUFFER)
+        #do_operation(msg)
 
     def ship_position(self,x,y):
         global ship_size
         global horizontal_flag
         global vertical_flag
+        global status_flag
+        global status_label
+        #print(x)
         if ship_size>0:
             if horizontal_flag==True:
-                if y+ship_size<10:
-                    for i in range(y,y+ship_size+1):
+                if y+ship_size<=10:
+                    for i in range(y,y+ship_size):
                         if(buttons_player[x][i]['background']=='turquoise'):
                             status_label.configure(text='please select another position as it is acquired')
                             status_flag = False
                             
                     if status_flag==True:
-                        for i in range(y,y+ship_size+1):
+                        for i in range(y,y+ship_size):
                             buttons_player[x][i]['background']='turquoise'
-                        ship_positions[str(ship_size)] = [x,y,1]
+                        ship_positions[ship_size] = [x,y,1]
                         horizontal_flag=False
                         ship_size -= 1
-                        status_label.configure(text='Enter your ship position of ship size' + str(ship_size))
+                        if(ship_size==0):
+                            self.disable_player_grid()
+                            self.disable_horizontal()
+                            self.disable_vertical()
+                            self.send_ship_positions(ship_positions)
+                        else:
+                            status_label.configure(text='Enter your ship position of ship size ' + str(ship_size))
                     else:
                         status_flag=True
                 else:
                     status_label.configure(text='please select another position')
             elif vertical_flag==True:
-                if x+ship_size<10:
-                    for i in range(x,x+ship_size+1):
+                if x+ship_size<=10:
+                    for i in range(x,x+ship_size):
                         if(buttons_player[i][y]['background']=='turquoise'):
                             status_label.configure(text='please select another position as it is acquired')
                             status_flag = False
 
                     if status_flag==True:
-                        for i in range(x,x+ship_size+1):
+                        for i in range(x,x+ship_size):
                             buttons_player[i][y]['background']='turquoise'
-                        ship_positions[str(ship_size)] = [x,y,0]
+                        ship_positions[ship_size] = [x,y,0]
                         vertical_flag=False
                         ship_size-=1
-                        status_label.configure(text='Enter your ship position of ship size' + str(ship_size))
+                        if(ship_size==0):
+                            self.disable_player_grid()
+                            self.disable_horizontal()
+                            self.disable_vertical()
+                            self.send_ship_positions(ship_positions)
+                        else:
+                            status_label.configure(text='Enter your ship position of ship size ' + str(ship_size))
                     else:
                         status_flag=True
                 else:
@@ -149,10 +171,11 @@ class Client:
             else:
                 status_label.configure(text='please select horizontal or vertical first')
         else:
-            disable_player_grid()
-            disable_horizontal()
-            disable_vertical()
-            send_ship_positions(ship_positions)
+            # self.disable_player_grid()
+            # self.disable_horizontal()
+            # self.disable_vertical()
+            # self.send_ship_positions(ship_positions)
+            pass
 
 
     
@@ -189,12 +212,12 @@ if __name__=='__main__':
     client.disable_ready()
     #ready['state']='disabled'
     global horizontal
-    horizontal = Button(root,text='Horizontal',font=("Helvetica", "16"),padx=10,pady=10,command=client.set_horizontal())
+    horizontal = Button(root,text='Horizontal',font=("Helvetica", "16"),padx=10,pady=10,command=lambda :client.set_horizontal())
     horizontal.place(x =575,y=300)
     client.disable_horizontal()
     #horizontal['state']='disabled'
     #global vertical
-    vertical = Button(root,text='Vertical',font=("Helvetica", "16"),padx=10,pady=10,command=client.set_vertical())
+    vertical = Button(root,text='Vertical',font=("Helvetica", "16"),padx=10,pady=10,command=lambda :client.set_vertical())
     vertical.place(x =575,y=450)
     client.disable_vertical()
     #Vertical['state']='disabled'
@@ -211,7 +234,7 @@ if __name__=='__main__':
     for x in range(10):
         temp_buttons = []
         for y in range(10):
-            b = tk.Button(board1, bd=1, text=" ", height=2, width=5,background='#00ace6',command=client.ship_position(x,y))
+            b = tk.Button(board1, bd=1, text=" ", height=2, width=5,background='#00ace6',command=lambda x=x, y=y:client.ship_position(x,y))
             b.grid(row=x, column=y)
             temp_buttons.append(b)
         buttons_player.append(temp_buttons)
