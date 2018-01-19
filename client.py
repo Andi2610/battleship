@@ -14,10 +14,12 @@ class Client:
     global ship_size
     global ship_positions
     global status_flag
+    global attack_flag
 
     horizontal_flag=False
     vertical_flag=False
     status_flag=True
+    attack_flag = False
     ship_positions=dict()
     
     def connectServer(self):
@@ -26,7 +28,7 @@ class Client:
             clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             clientsocket.connect((host,port))
             print ("Connected to Server")
-            status_label.configure(text='Waiting for other player')
+            status_label.configure(text='Waiting for other player...')
             player_status=clientsocket.recv(BUFFER)
             print (player_status)
             self.enable_player_grid()
@@ -108,8 +110,85 @@ class Client:
         print(ship_positions)
         clientsocket.sendall(str(ship_positions))
         print("After sending")
-        #msg = clientsocket.recv(BUFFER)
-        #do_operation(msg)
+        while True:
+            msg = clientsocket.recv(BUFFER)
+            print(msg)
+            self.do_operation(msg)
+            if msg == 'win' or msg == 'lose':
+                break
+
+    def attack_postions(self,x,y):
+        self.x_attack=x
+        self.y_attack=y
+        global attack_flag
+        buttons_enemy[x][y]['background']='black'
+        attack_flag = True
+
+    def do_operation(self,msg):
+        global clientsocket
+        if msg == "attack":
+            status_label.configure(text='Enter attacking position on enemy grid')
+            self.enable_enemy_grid()
+            if attack_flag == True:
+                clientsocket.sendall(str(self.x_attack),str(self.y_attack))
+                attack_flag=False
+                self.disable_enemy_grid()
+                status_label.configure(text='Wait..Checking if it is a hit or miss')
+            else:
+                pass
+        elif msg == "wait":
+            status_label.configure(text='Wait... it\'s your opponent\'s turn')
+        elif msg.startswith('uhit'):
+            status_label.configure(text='Wow! it is a hit')
+            details = msg.split(",")
+            x=int(details[1])
+            y=int(details[2])
+            your_score=int(details[3])
+            enemy_score=int(details[4])
+            ship_destroyed = int(details[5])
+            if ship_destroyed != 0:
+                status_label.configure(text='Enemy\'s ship of size '+ str(ship_destroyed)+ ' is destroyed' )
+            buttons_enemy[x][y]['background']='red'
+            score_label.configure(text='Your Score :'+" "+str(your_score))
+            score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+        elif msg.startswith('umiss'):
+            status_label.configure(text='Sad! it is a miss')
+            details = msg.split(",")
+            x=int(details[1])
+            y=int(details[2])
+            your_score=int(details[3])
+            enemy_score=int(details[4])
+            buttons_enemy[x][y]['background']='white'
+            score_label.configure(text='Your Score :'+" "+str(your_score))
+            score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+        elif msg.startswith('hit'):
+            status_label.configure(text='Sad! Your ship is being hit')
+            details = msg.split(",")
+            x=int(details[1])
+            y=int(details[2])
+            your_score=int(details[3])
+            enemy_score=int(details[4])
+            ship_destroyed = int(details[5])
+            if ship_destroyed != 0:
+                status_label.configure(text='Your ship of size '+ str(ship_destroyed)+ ' is destroyed' )
+            buttons_player[x][y]['background']='red'
+            score_label.configure(text='Your Score :'+" "+str(your_score))
+            score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+        elif msg.startswith('miss'):
+            status_label.configure(text='Great! Your opponent missed')
+            details = msg.split(",")
+            x=int(details[1])
+            y=int(details[2])
+            your_score=int(details[3])
+            enemy_score=int(details[4])
+            buttons_player[x][y]['background']='white'
+            score_label.configure(text='Your Score :'+" "+str(your_score))
+            score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+        elif msg=='win':
+            status_label.configure(text='Congratulations!!! You Win')
+        else:
+            status_label.configure(text='Sorry!! You lose')
+            
 
     def ship_position(self,x,y):
         global ship_size
@@ -136,13 +215,15 @@ class Client:
                             self.disable_player_grid()
                             self.disable_horizontal()
                             self.disable_vertical()
+                            status_label.configure(text='Wait for a second')
                             self.send_ship_positions(ship_positions)
+
                         else:
                             status_label.configure(text='Enter your ship position of ship size ' + str(ship_size))
                     else:
                         status_flag=True
                 else:
-                    status_label.configure(text='please select another position')
+                    status_label.configure(text='please select another position as it won\'t fit')
             elif vertical_flag==True:
                 if x+ship_size<=10:
                     for i in range(x,x+ship_size):
@@ -160,13 +241,14 @@ class Client:
                             self.disable_player_grid()
                             self.disable_horizontal()
                             self.disable_vertical()
+                            status_label.configure(text='Wait for a second')
                             self.send_ship_positions(ship_positions)
                         else:
                             status_label.configure(text='Enter your ship position of ship size ' + str(ship_size))
                     else:
                         status_flag=True
                 else:
-                    status_label.configure(text='please select another position')
+                    status_label.configure(text='please select another position as it won\'t fit')
 
             else:
                 status_label.configure(text='please select horizontal or vertical first')
@@ -228,9 +310,13 @@ if __name__=='__main__':
     miss_color = Button(root,text=' ',width=5,height=2,background='white',padx=10,pady=10).place(x =650,y=600)
     miss_color_label = Label(root,text='Miss\'s color',font=("Helvetica", "16"),background='#000000',fg='#ffffff',bd=0).place(x =720,y=620)
     global status_label
-    status_label = Label(root, text=' ',font=("Helvetica", "16"),background='#000000',fg='#ffffff',bd=0)
-    status_label.place(x =550,y=100)
+    status_label = Label(root, text=' ',font=("Helvetica", "18","bold"),background='#000000',fg='#ffffff',bd=0)
+    status_label.place(x =480,y=100)
     #status_label.configure(text='qwerty')
+    score_label = Label(root, text=' ',font=("Helvetica", "18","bold"),background='#000000',fg='#ffffff',bd=0)
+    score_label.place(x=30,y=30)
+    enemy_score_label = Label(root, text=' ',font=("Helvetica", "18","bold"),background='#000000',fg='#ffffff',bd=0)
+    enemy_score_label.place(x=1100,y=30)
     for x in range(10):
         temp_buttons = []
         for y in range(10):
@@ -244,7 +330,7 @@ if __name__=='__main__':
     for x in range(10):
         temp_buttons = []
         for y in range(10):
-            b = tk.Button(board2, bd=1, text=" ", height=2, width=5,background='#00ace6')
+            b = tk.Button(board2, bd=1, text=" ", height=2, width=5,background='#00ace6',command=lambda x=x, y=y:client.attack_postions(x,y))
             b.grid(row=x, column=y)
             temp_buttons.append(b)
         buttons_enemy.append(temp_buttons)
