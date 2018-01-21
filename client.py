@@ -110,6 +110,13 @@ class Client:
         print(ship_positions)
         clientsocket.sendall(str(ship_positions))
         print("After sending")
+
+
+    def send_ready(self):
+        my_thread = threading.Thread(target=self.getInstruction)
+        my_thread.start()
+        
+    def getInstruction(self):
         while True:
             msg = clientsocket.recv(BUFFER)
             print(msg)
@@ -126,11 +133,12 @@ class Client:
 
     def do_operation(self,msg):
         global clientsocket
+        global attack_flag
         if msg == "attack":
             status_label.configure(text='Enter attacking position on enemy grid')
             self.enable_enemy_grid()
             if attack_flag == True:
-                clientsocket.sendall(str(self.x_attack),str(self.y_attack))
+                clientsocket.sendall(str(self.x_attack)+","+str(self.y_attack))
                 attack_flag=False
                 self.disable_enemy_grid()
                 status_label.configure(text='Wait..Checking if it is a hit or miss')
@@ -288,7 +296,7 @@ if __name__=='__main__':
     label1.place(x=950, y=120)
     global ready
     ship_size = 5
-    ready = tk.Button(root,text='Ready',font=("Helvetica", "16"),bd=0,padx=10,pady=10)
+    ready = tk.Button(root,text='Ready',font=("Helvetica", "16"),bd=0,padx=10,pady=10,command=lambda :client.send_ready())
     ready.place(x =575,y=150)
     #print(type(ready))
     client.disable_ready()
