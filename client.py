@@ -123,12 +123,14 @@ class Client:
             self.do_operation(msg)
             if msg == 'win' or msg == 'lose':
                 break
+           
 
     def attack_postions(self,x,y):
         self.x_attack=x
         self.y_attack=y
         global attack_flag
         buttons_enemy[x][y]['background']='black'
+        clientsocket.sendall(str(self.x_attack)+","+str(self.y_attack))
         attack_flag = True
 
     def do_operation(self,msg):
@@ -137,17 +139,17 @@ class Client:
         if msg == "attack":
             status_label.configure(text='Enter attacking position on enemy grid')
             self.enable_enemy_grid()
-            if attack_flag == True:
-                clientsocket.sendall(str(self.x_attack)+","+str(self.y_attack))
-                attack_flag=False
-                self.disable_enemy_grid()
-                status_label.configure(text='Wait..Checking if it is a hit or miss')
-            else:
-                pass
+            while True:
+                if attack_flag == True:
+                    break
+            self.disable_enemy_grid()
+            attack_flag=False
+            status_label.configure(text='Wait..Checking if it is a hit or miss')
+            #clientsocket.send("hello")
         elif msg == "wait":
             status_label.configure(text='Wait... it\'s your opponent\'s turn')
         elif msg.startswith('uhit'):
-            status_label.configure(text='Wow! it is a hit')
+            status_label_1.configure(text='Wow! it is a hit')
             details = msg.split(",")
             x=int(details[1])
             y=int(details[2])
@@ -155,22 +157,26 @@ class Client:
             enemy_score=int(details[4])
             ship_destroyed = int(details[5])
             if ship_destroyed != 0:
-                status_label.configure(text='Enemy\'s ship of size '+ str(ship_destroyed)+ ' is destroyed' )
+                status_label_1.configure(text='Enemy\'s ship of size '+ str(ship_destroyed)+ ' is destroyed' )
             buttons_enemy[x][y]['background']='red'
+            buttons_enemy[x][y]['state']='disabled'
             score_label.configure(text='Your Score :'+" "+str(your_score))
-            score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+            enemy_score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+            clientsocket.send("hello")
         elif msg.startswith('umiss'):
-            status_label.configure(text='Sad! it is a miss')
+            status_label_1.configure(text='Sad! it is a miss')
             details = msg.split(",")
             x=int(details[1])
             y=int(details[2])
             your_score=int(details[3])
             enemy_score=int(details[4])
             buttons_enemy[x][y]['background']='white'
+            buttons_enemy[x][y]['state']='disabled'
             score_label.configure(text='Your Score :'+" "+str(your_score))
-            score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+            enemy_score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+            clientsocket.send("hello")
         elif msg.startswith('hit'):
-            status_label.configure(text='Sad! Your ship is being hit')
+            status_label_1.configure(text='Sad! Your ship is being hit')
             details = msg.split(",")
             x=int(details[1])
             y=int(details[2])
@@ -178,12 +184,13 @@ class Client:
             enemy_score=int(details[4])
             ship_destroyed = int(details[5])
             if ship_destroyed != 0:
-                status_label.configure(text='Your ship of size '+ str(ship_destroyed)+ ' is destroyed' )
+                status_label_1.configure(text='Your ship of size '+ str(ship_destroyed)+ ' is destroyed' )
             buttons_player[x][y]['background']='red'
             score_label.configure(text='Your Score :'+" "+str(your_score))
-            score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+            enemy_score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+            clientsocket.send("hello")
         elif msg.startswith('miss'):
-            status_label.configure(text='Great! Your opponent missed')
+            status_label_1.configure(text='Great! Your opponent missed')
             details = msg.split(",")
             x=int(details[1])
             y=int(details[2])
@@ -191,7 +198,8 @@ class Client:
             enemy_score=int(details[4])
             buttons_player[x][y]['background']='white'
             score_label.configure(text='Your Score :'+" "+str(your_score))
-            score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+            enemy_score_label.configure(text='Enemy\'s Score :'+" "+str(enemy_score))
+            clientsocket.send("hello")
         elif msg=='win':
             status_label.configure(text='Congratulations!!! You Win')
         else:
@@ -320,6 +328,8 @@ if __name__=='__main__':
     global status_label
     status_label = Label(root, text=' ',font=("Helvetica", "18","bold"),background='#000000',fg='#ffffff',bd=0)
     status_label.place(x =480,y=100)
+    status_label_1 = Label(root, text=' ',font=("Helvetica", "18","bold"),background='#000000',fg='#ffffff',bd=0)
+    status_label_1.place(x =480,y=50)
     #status_label.configure(text='qwerty')
     score_label = Label(root, text=' ',font=("Helvetica", "18","bold"),background='#000000',fg='#ffffff',bd=0)
     score_label.place(x=30,y=30)
