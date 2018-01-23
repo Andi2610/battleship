@@ -171,14 +171,15 @@ class Server:
 		self.player1_score=0
 		self.player2_score=0
 		self.flag=0
+		self.player1_check=""
 		
-		while self.flag==0:
-			print ("me0")
-			self.player1_check=self.player1_chance()
-			garbage1 = self.player1.recv(BUFFER)
-			garbage2 = self.player2.recv(BUFFER)
-			print (garbage1 +"1")
-			print (garbage2 + "2")
+		self.player1_check=self.player1_chance()
+		print ("me0")
+		garbage1 = self.player1.recv(BUFFER)
+		garbage2 = self.player2.recv(BUFFER)
+		print (garbage1 +"1")
+		print (garbage2 + "2")
+		while True:
 			print ("me1")
 			while self.player1_check=='hit':
 				print ("me2")
